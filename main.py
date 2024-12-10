@@ -1,6 +1,7 @@
 import pygame
 import random
 import time
+import math
 SCREEN_SIZE = [1000, 800]
 running = True
 class Vector2:
@@ -17,6 +18,8 @@ class Vector2:
         return Vector2(self.x - other.x, self.y - other.y)
     def __mul__(self, scalar):
         return Vector2(self.x * scalar, self.y * scalar)
+    def __truediv__(self, scalar):
+        return Vector2(self.x / scalar, self.y / scalar)
     def get(self):
         return [self.x, self.y]
     def dot(self, other):
@@ -25,7 +28,7 @@ class Vector2:
 
 class Color:
     def __init__(self, r=0, g=0, b=0):
-        self.rgb = [r,b,g]
+        self.rgb = [r + random.randint(0, 255),b+ random.randint(0, 255),g+ random.randint(0, 255)]
     def get(self):
         return self.rgb
     def add(self, number):
@@ -44,9 +47,10 @@ class Color:
 
 
 class Ball:
-    def __init__(self, posvec=None, velo=None, mass=1):
+    def __init__(self,num, posvec=None, velo=None, mass=1):
         self.posvec = posvec
         self.velo = velo 
+        self.num = num
         if posvec == None:
             self.posvec = Vector2( random.randint(10,  SCREEN_SIZE[0]-10), random.randint(10, SCREEN_SIZE[1]-10) )
         if velo == None:
@@ -55,7 +59,6 @@ class Ball:
         self.color = Color()
         self.freez = False
         self.size = 10
-        self.color.set(500)
 
     def update(self):
         newpos = self.posvec + self.velo
@@ -67,42 +70,34 @@ class Ball:
             self.posvec = self.posvec + self.velo
 
 
-def collition22(ball1, ball2):
-    pos_dif = ball1.posvec - ball2.posvec
-    velo_diff = ball1.velo - ball2.velo
-    dist_sq = pos_dif.dot(pos_dif)
-    factor = 2 * velo_diff.dot(pos_dif) / dist_sq
-    ball1.velo = ball1.velo - pos_dif.scale((factor * ball2.mass) / (ball1.mass + ball2.mass))
-    ball2.velo = ball2.velo + pos_dif.scale((factor * ball1.mass) / (ball1.mass + ball2.mass))
+
 
 def reac(ball1, ball2):
     nv =  ball1.velo * (ball1.mass - ball2.mass) + ball2.velo  * ball2.mass * 2
-    print(nv)
     return nv
 
+def display_inf(balls):
+    print('\033[F\033[K' * (len(balls) + 1), end='')
+    a = ""
+    for ball in balls:
+        a += f"{ball.num}, pos:{ball.posvec} velo:{ball.velo} \n"
+    print(a)
 
-def (ball1, ball2):
-    m1 = ball1.mass
-    m2 = ball2.mass
-    v1 = ball1.velo
-    v2 = ball2.velo
 
-    v1_final = (m1 - m2) / (m1 + m2) * v1 + 2 * m2 / (m1 + m2) * v2
-    v2_final = (m2 - m1) / (m1 + m2) * v2 + 2 * m1 / (m1 + m2) * v1
 
 def collition(ball1, ball2):
-def calculate_final_velocity(ball1, ball2):
     m1 = ball1.mass
     m2 = ball2.mass
     v1 = ball1.velo
     v2 = ball2.velo
 
-    v1_final = (m1 - m2) / (m1 + m2) * v1 + 2 * m2 / (m1 + m2) * v2
-    v2_final = (m2 - m1) / (m1 + m2) * v2 + 2 * m1 / (m1 + m2) * v1
-    ball2.velo = v2
-
+    v1_final = v1 * (m1 - m2) / (m1 + m2) +  v2 * 2 * m2 / (m1 + m2) 
+    v2_final = v2 * (m2 - m1) / (m1 + m2) + v1 * 2 * m1 / (m1 + m2) 
+    ball2.velo = v2_final
+    ball1.velo = v1_final
+    ball1.color.set(100)
+    ball2.color.set(100)
 def drawball(ball):
-    print(ball.posvec.get())
     pygame.draw.circle(screen , ball.color.get(), ball.posvec.get(), ball.size)
 
 
@@ -118,23 +113,29 @@ class Balls:
             ball.update()
             drawball(ball)
         
-    def newball(self):
-        self.balls.append(Ball())
+    def newball(self, num):
+        self.balls.append(Ball(num, velo=Vector2(random.randint(-5, 5), random.randint(-5, 5))))
 
     def checkcollition(self):
-        for i in range(len(self.balls) - 1):
-            if (self.balls[i].posvec.x - self.balls[i+1].posvec.x) < 1 and (self.balls[i].posvec.y - self.balls[i+1].posvec.y) < 1:
-                collition(self.balls[i], self.balls[i+1])
+        for i in range(len(self.balls)):
+            for y in range(i+1, len(self.balls)):
+                distance = math.sqrt(
+                    (self.balls[i].posvec.x - self.balls[y].posvec.x)**2 +
+                    (self.balls[i].posvec.y - self.balls[y].posvec.y)**2
+                )
+                if distance < self.balls[i].size +  self.balls[y].size:
+                    collition(self.balls[i], self.balls[y])
 
 screen = pygame.display.set_mode(SCREEN_SIZE)
 balls = Balls()
-for i in range(10):
-    balls.newball()
+for i in range(20):
+    balls.newball(i)
 while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:  
             running = False
     balls.update()
+    display_inf(balls.balls)
     pygame.display.flip()
     screen.fill(0)
     time.sleep(.01)
