@@ -7,14 +7,15 @@ class Vector2:
     def __init__(self, x=0, y=0):
         self.x = x
         self.y = y
-
+    def __str__(self):
+        return f"Vector2({self.x}, {self.y})"
     def __add__(self, other):
         if type(other) == list or type(other) == tuple:
             return [self.x + other[0], self.y + other[1]]
         return Vector2(self.x + other.x, self.y + other.y)
     def __sub__(self, other):
         return Vector2(self.x - other.x, self.y - other.y)
-    def scale(self, scalar):
+    def __mul__(self, scalar):
         return Vector2(self.x * scalar, self.y * scalar)
     def get(self):
         return [self.x, self.y]
@@ -66,13 +67,39 @@ class Ball:
             self.posvec = self.posvec + self.velo
 
 
-def collition(ball1, ball2):
+def collition22(ball1, ball2):
     pos_dif = ball1.posvec - ball2.posvec
     velo_diff = ball1.velo - ball2.velo
     dist_sq = pos_dif.dot(pos_dif)
     factor = 2 * velo_diff.dot(pos_dif) / dist_sq
     ball1.velo = ball1.velo - pos_dif.scale((factor * ball2.mass) / (ball1.mass + ball2.mass))
     ball2.velo = ball2.velo + pos_dif.scale((factor * ball1.mass) / (ball1.mass + ball2.mass))
+
+def reac(ball1, ball2):
+    nv =  ball1.velo * (ball1.mass - ball2.mass) + ball2.velo  * ball2.mass * 2
+    print(nv)
+    return nv
+
+
+def (ball1, ball2):
+    m1 = ball1.mass
+    m2 = ball2.mass
+    v1 = ball1.velo
+    v2 = ball2.velo
+
+    v1_final = (m1 - m2) / (m1 + m2) * v1 + 2 * m2 / (m1 + m2) * v2
+    v2_final = (m2 - m1) / (m1 + m2) * v2 + 2 * m1 / (m1 + m2) * v1
+
+def collition(ball1, ball2):
+def calculate_final_velocity(ball1, ball2):
+    m1 = ball1.mass
+    m2 = ball2.mass
+    v1 = ball1.velo
+    v2 = ball2.velo
+
+    v1_final = (m1 - m2) / (m1 + m2) * v1 + 2 * m2 / (m1 + m2) * v2
+    v2_final = (m2 - m1) / (m1 + m2) * v2 + 2 * m1 / (m1 + m2) * v1
+    ball2.velo = v2
 
 def drawball(ball):
     print(ball.posvec.get())
