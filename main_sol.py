@@ -26,6 +26,18 @@ class Vector2:
     def dot(self, other):
         return self.x * other.x + self.y * other.y
      
+    def set_norm(self, new_norm):
+
+        current_norm = math.sqrt(self.x**2 + self.y**2)  # Calculate the current norm
+        if current_norm == 0:
+            raise ValueError("Cannot set the norm of a zero vector.")
+        
+        scale = new_norm / current_norm  # Compute the scaling factor
+        self.x *= scale
+        self.y *= scale
+        return Vector2(self.x * scale, self.y * scale)
+     
+     
 G = Vector2(0, 0)
 
 class Color:
@@ -52,7 +64,8 @@ class Ball:
     def __init__(self,num, posvec=None, velo=None, mass=1):
         self.posvec = posvec
         self.velo = velo 
-        self.forces = [G]
+        self.constforces = [G]
+        self.varforces = []
         self.num = num
         if posvec == None:
             self.posvec = Vector2( random.randint(10,  SCREEN_SIZE[0]-10), random.randint(10, SCREEN_SIZE[1]-10) )
@@ -65,8 +78,12 @@ class Ball:
 
     def update(self):
         self.color.set(math.sqrt(self.velo.x**2 + self.velo.y**2) * 100)
-        for force in self.forces:
+        self.getattraction()
+        for force in self.constforces:
             self.velo += force
+        for forcess in self.varforces:
+
+            self.velo += forcess
 
         newpos = self.posvec + self.velo
         if newpos.x > SCREEN_SIZE[0] - self.size or newpos.x < self.size:
@@ -76,9 +93,25 @@ class Ball:
 
         if not self.freez:
             self.posvec = self.posvec + self.velo
+    
+
+        
+    
+    def getattraction(self):
+        self.varforcess = []
+        for i in range(len(balls.balls)):
+            for y in range(0, len(balls.balls)):
+                if i != y:
+                    nf = 6.674* (10 **-5) *((balls.balls[i].mass - balls.balls[y].mass)/ distance(balls.balls[i], balls.balls[y])**2)
+                    dirf = Vector2(balls.balls[i].posvec.x - balls.balls[y].posvec.x , balls.balls[i].posvec.y - balls.balls[y].posvec.y)
+                    print(i, y)
+                    print(balls.balls[i].posvec.x , balls.balls[y].posvec.x)
+                    pygame.draw.line(screen, (255, 255, 255), self.posvec.get(), (self.posvec + dirf).get())
+                    self.varforces.append(dirf.set_norm(nf * 10**6))#zpiokjgmoi jzHFGMOI%UAhz
 
 
-
+def distance(ball1, ball2):
+    return math.sqrt((ball1.posvec.x - ball2.posvec.x)**2 + (ball1.posvec.y - ball2.posvec.y)**2)
 
 def display_inf(balls):
     print('\033[F\033[K' * (len(balls) + 1), end='')
@@ -172,8 +205,9 @@ class Balls:
 screen = pygame.display.set_mode(SCREEN_SIZE)
 
 balls = Balls()
-for i in range(200):
-    balls.newball(i)
+
+balls.createball("sun", Vector2(SCREEN_SIZE[0]/2, SCREEN_SIZE[1]/2), Vector2() , 1.989) # * 10**30 for real 
+balls.createball("eart", Vector2(SCREEN_SIZE[0]/2 + 200, SCREEN_SIZE[1]/2), Vector2(), 0.005972)
 timer = 0
 clock = 0
 while running:
@@ -195,7 +229,7 @@ while running:
         #clock = timer + 10
     
     balls.update()
-    #display_inf(balls.balls)
+    display_inf(balls.balls)
     pygame.display.flip()
     screen.fill((200, 200, 200))
     time.sleep(.001)
